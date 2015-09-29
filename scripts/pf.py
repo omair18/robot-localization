@@ -20,7 +20,7 @@ import math
 import time
 
 import numpy as np
-from numpy.random import random_sample
+from numpy.random import random_sample, randn, uniform
 from sklearn.neighbors import NearestNeighbors
 from occupancy_field import OccupancyField
 
@@ -95,6 +95,8 @@ class ParticleFilter:
         self.laser_max_distance = 2.0   # maximum penalty to assess in the likelihood field model
 
         # TODO: define additional constants if needed
+        self.std_x = 1                  # std of x
+        self.std_y = 1                  # std of y
 
         # Setup pubs and subs
 
@@ -131,9 +133,16 @@ class ParticleFilter:
         # first make sure that the particle weights are normalized
         self.normalize_particles()
 
-        # TODO: assign the lastest pose into self.robot_pose as a geometry_msgs.Pose object
-        # just to get started we will fix the robot's pose to always be at the origin
-        self.robot_pose = Pose()
+        mean_x = sum([particle.w * particle.x for particle in self.particle_cloud])
+        mean_y = sum([particle.w * particle.y for particle in self.particle_cloud])
+        
+        theta_array = []
+        for particle in self.particle_cloud:
+            theta_array = 
+            particle.theta = 
+        mean_theta = sum([particle.w * particle.theta for particle in self.particle_cloud])
+        
+        self.robot_pose = Particle(mean_x, mean_y, mean_theta).as_pose()
 
     def update_particles_with_odom(self, msg):
         """ Update the particles using the newly given odometry pose.
@@ -223,14 +232,24 @@ class ParticleFilter:
         # TODO create particles
         #zcw what the heck is rviz widget for selecting a guest. a guest to the starting pose of the robot
         self.particle_cloud.append(Particle(0,0,0))
-        
+
+        (x, y, theta) = xy_theta
+
+        # Create N particles centered around initial guess
+        for i in range(self.n_particles):
+            sample_x = x + randn() * self.std_x
+            sample_y = y + randn() * self.std_y
+            sample_theta = theta + uniform() * (2*np.pi)
+            self.particle_cloud.append(Particle(sample_x, sample_y, sample_theta))
+
         self.normalize_particles()
         self.update_robot_pose()
 
     def normalize_particles(self):
         """ Make sure the particle weights define a valid distribution (i.e. sum to 1.0) """
-        pass
-        # TODO: implement this
+        sum = sum([particle.w for particle in self.particle_cloud])
+        for particle in self.particle_cloud:
+            particle.w /= sum
 
     def publish_particles(self, msg):
         particles_conv = []
