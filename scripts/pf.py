@@ -220,9 +220,8 @@ class ParticleFilter:
         if xy_theta == None:
             xy_theta = convert_pose_to_xy_and_theta(self.odom_pose.pose)
         self.particle_cloud = []
-        self.particle_cloud.append(Particle(0,0,0))
         # TODO create particles
-
+        #zcw what the heck is rviz widget for selecting a guest. a guest to the starting pose of the robot
         self.normalize_particles()
         self.update_robot_pose()
 
@@ -258,9 +257,10 @@ class ParticleFilter:
             # this will eventually be published by either Gazebo or neato_node
             return
 
-        # calculate pose of laser relative ot the robot base
+        # calculate pose of laser relative to the robot base
         p = PoseStamped(header=Header(stamp=rospy.Time(0),
                                       frame_id=msg.header.frame_id))
+        #ZCW isnt laser in base frame alreay???
         self.laser_pose = self.tf_listener.transformPose(self.base_frame,p)
 
         # find out where the robot thinks it is based on its odometry
