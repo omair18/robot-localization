@@ -222,6 +222,8 @@ class ParticleFilter:
         self.particle_cloud = []
         # TODO create particles
         #zcw what the heck is rviz widget for selecting a guest. a guest to the starting pose of the robot
+        self.particle_cloud.append(Particle(0,0,0))
+        
         self.normalize_particles()
         self.update_robot_pose()
 
