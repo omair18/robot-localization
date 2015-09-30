@@ -135,12 +135,10 @@ class ParticleFilter:
 
         mean_x = sum([particle.w * particle.x for particle in self.particle_cloud])
         mean_y = sum([particle.w * particle.y for particle in self.particle_cloud])
-        
-        theta_array = []
-        for particle in self.particle_cloud:
-            theta_array = 
-            particle.theta = 
-        mean_theta = sum([particle.w * particle.theta for particle in self.particle_cloud])
+
+        theta_x = np.mean([particle.w*math.cos(particle.theta) for particle in self.particle_cloud])
+        theta_y = np.mean([particle.w*math.sin(particle.theta) for particle in self.particle_cloud])
+        mean_theta = math.atan(theta_y/theta_x)
         
         self.robot_pose = Particle(mean_x, mean_y, mean_theta).as_pose()
 
