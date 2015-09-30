@@ -245,9 +245,9 @@ class ParticleFilter:
 
     def normalize_particles(self):
         """ Make sure the particle weights define a valid distribution (i.e. sum to 1.0) """
-        sum = sum([particle.w for particle in self.particle_cloud])
+        total = sum([particle.w for particle in self.particle_cloud])
         for particle in self.particle_cloud:
-            particle.w /= sum
+            particle.w /= total
 
     def publish_particles(self, msg):
         particles_conv = []
@@ -289,14 +289,18 @@ class ParticleFilter:
         self.odom_pose = self.tf_listener.transformPose(self.odom_frame, p)
         # store the the odometry pose in a more convenient format (x,y,theta)
         new_odom_xy_theta = convert_pose_to_xy_and_theta(self.odom_pose.pose)
-
+        # print new_odom_xy_theta
+        # print self.current_odom_xy_theta
         if not(self.particle_cloud):
+            print "before initialize particle_cloud"
             # now that we have all of the necessary transforms we can update the particle cloud
             self.initialize_particle_cloud()
             # cache the last odometric pose so we can only update our particle filter if we move more than self.d_thresh or self.a_thresh
             self.current_odom_xy_theta = new_odom_xy_theta
             # update our map to odom transform now that the particles are initialized
             self.fix_map_to_odom_transform(msg)
+            print "self.current_odom_xy_theta",self.current_odom_xy_theta
+
         elif (math.fabs(new_odom_xy_theta[0] - self.current_odom_xy_theta[0]) > self.d_thresh or
               math.fabs(new_odom_xy_theta[1] - self.current_odom_xy_theta[1]) > self.d_thresh or
               math.fabs(new_odom_xy_theta[2] - self.current_odom_xy_theta[2]) > self.a_thresh):
