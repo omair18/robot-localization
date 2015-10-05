@@ -162,9 +162,18 @@ class ParticleFilter:
         else:
             self.current_odom_xy_theta = new_odom_xy_theta
             return
+        x, y = delta[0], delta[1]
+        r = math.sqrt(x**2+y**2)
+        theta = np.arctan(float(y)/float(x))
+        phi = theta - old_odom_xy_theta[2]
+        for particle in particle_cloud:
+            particle.x += r*math.cos(phi+particle.theta)
+            particle.y += r*math.sin(phi+particle.theta)
+            particle.theta = phi + delta[2]
 
         # TODO: modify particles using delta
         # For added difficulty: Implement sample_motion_odometry (Prob Rob p 136)
+        #wzc!!!!!!!!!!!!!????????????????????????????
 
     def map_calc_range(self,x,y,theta):
         """ Difficulty Level 3: implement a ray tracing likelihood model... Let me know if you are interested """
@@ -179,12 +188,23 @@ class ParticleFilter:
         """
         # make sure the distribution is normalized
         self.normalize_particles()
+
+
+        # draw_random_sample
+
         # TODO: fill out the rest of the implementation
 
     def update_particles_with_laser(self, msg):
         """ Updates the particle weights in response to the scan contained in the msg """
         # TODO: implement this
-        pass
+        test_angles=[0]
+        for angle in test_angles:
+            r_min_d = msg.ranges[angle]
+            for particle in particle_cloud:
+                ref_x = particle.x + r_min_d*math.sin(angle)
+                ref_y = particle.y + r_min_d*math.cos(angle)
+                p_min_d = OccupancyField.get_closest_obstacle_distance(ref_x, ref_y)
+        particle.w = exp(-p_min_d**2)
 
     @staticmethod
     def weighted_values(values, probabilities, size):
@@ -200,7 +220,7 @@ class ParticleFilter:
     def draw_random_sample(choices, probabilities, n):
         """ Return a random sample of n elements from the set choices with the specified probabilities
             choices: the values to sample from represented as a list
-            probabilities: the probability of selecting each element in choices represented as a list
+            probabilities: the prob weighted_valuesability of selecting each element in choices represented as a list
             n: the number of samples
         """
         values = np.array(range(len(choices)))
