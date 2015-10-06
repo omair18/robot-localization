@@ -18,7 +18,6 @@ import tf
 from tf import TransformListener
 from tf import TransformBroadcaster
 from tf.transformations import euler_from_quaternion, rotation_matrix, quaternion_from_matrix
-from random import gauss
 
 import math
 import time
@@ -121,11 +120,13 @@ class ParticleFilter:
         self.current_odom_xy_theta = []
 
         # request the map from the map server, the map should be of type nav_msgs/OccupancyGrid
-        # TODO: fill in the appropriate service call here.  The resultant map should be assigned be passed
-        #       into the init method for OccupancyField
+        rospy.wait_for_service('static_map')
+        get_map = rospy.ServiceProxy('static_map', GetMap)
+        map = get_map().map
+        print map
 
         # for now we have commented out the occupancy field initialization until you can successfully fetch the map
-        #self.occupancy_field = OccupancyField(map)
+        self.occupancy_field = OccupancyField(map)
         self.initialized = True
 
     def update_robot_pose(self):
@@ -201,18 +202,18 @@ class ParticleFilter:
 
     def update_particles_with_laser(self, msg):
         """ Updates the particle weights in response to the scan contained in the msg """
-        # TODO: implement this
-        test_angles=[0]
+        test_angles=[0, 90, 180, 270]
         for angle in test_angles:
             r_min_d = msg.ranges[angle]
+
+            # ignore when a scan finds nothing
             if r_min_d == 0.0:
                 continue
             for particle in self.particle_cloud:
                 ref_x = particle.x + r_min_d*math.cos(angle*np.pi/180 + particle.theta)
                 ref_y = particle.y + r_min_d*math.sin(angle*np.pi/180 + particle.theta)
-                p_min_d = OccupancyField.get_closest_obstacle_distance(ref_x, ref_y)
-                particle.w *= exp(-p_min_d**2)
-                print particle.w
+                p_min_d = self.occupancy_field.get_closest_obstacle_distance(ref_x, ref_y)
+                particle.w *= math.exp(-p_min_d**2)
 
     @staticmethod
     def weighted_values(values, probabilities, size):
@@ -255,8 +256,7 @@ class ParticleFilter:
         if xy_theta == None:
             xy_theta = convert_pose_to_xy_and_theta(self.odom_pose.pose)
         self.particle_cloud = []
-        # TODO create particles
-        #zcw what the heck is rviz widget for selecting a guest. a guest to the starting pose of the robot
+
         self.particle_cloud.append(Particle(0,0,0))
 
         (x, y, theta) = xy_theta
