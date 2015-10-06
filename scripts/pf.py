@@ -90,8 +90,8 @@ class ParticleFilter:
         self.odom_frame = "odom"        # the name of the odometry coordinate frame
         self.scan_topic = "scan"        # the topic where we will get laser scans from 
 
-        self.n_particles = 100          # the number of particles to use
-        self.n_angles = 4               # the number of angles to use from the range scan. Value contained in the interval [1,360]
+        self.n_particles = 1000          # the number of particles to use
+        self.n_angles = 20               # the number of angles to use from the range scan. Value contained in the interval [1,360]
         self.d_thresh = 0.2             # the amount of linear movement before performing an update
         self.a_thresh = math.pi/6       # the amount of angular movement before performing an update
 
