@@ -91,7 +91,7 @@ class ParticleFilter:
         self.scan_topic = "scan"        # the topic where we will get laser scans from 
 
         self.n_particles = 100          # the number of particles to use
-
+        self.n_angles = 4               # the number of angles to use from the range scan. Value contained in the interval [1,360]
         self.d_thresh = 0.2             # the amount of linear movement before performing an update
         self.a_thresh = math.pi/6       # the amount of angular movement before performing an update
 
@@ -207,7 +207,7 @@ class ParticleFilter:
 
     def update_particles_with_laser(self, msg):
         """ Updates the particle weights in response to the scan contained in the msg """
-        test_angles=[0, 90, 180, 270]
+        test_angles = np.asarray(np.linspace(0, 360, self.n_angles+1)[:-1], dtype=int)
         for angle in test_angles:
             r_min_d = msg.ranges[angle]
 
