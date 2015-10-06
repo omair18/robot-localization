@@ -90,17 +90,18 @@ class ParticleFilter:
         self.odom_frame = "odom"        # the name of the odometry coordinate frame
         self.scan_topic = "scan"        # the topic where we will get laser scans from 
 
-        self.n_particles = 3          # the number of particles to use
+        self.n_particles = 100          # the number of particles to use
 
         self.d_thresh = 0.2             # the amount of linear movement before performing an update
         self.a_thresh = math.pi/6       # the amount of angular movement before performing an update
 
         self.laser_max_distance = 2.0   # maximum penalty to assess in the likelihood field model
 
-        # TODO: define additional constants if needed
         self.std_x = 1                  # std of x
-        self.std_y = 0                  # std of y
+        self.std_y = 1                  # std of y
 
+        self.marker_multiplier = self.n_particles / 5
+        
         # Setup pubs and subs
 
         # pose_listener responds to selection of a new approximate robot location (for instance using rviz)
@@ -123,7 +124,6 @@ class ParticleFilter:
         rospy.wait_for_service('static_map')
         get_map = rospy.ServiceProxy('static_map', GetMap)
         map = get_map().map
-        print map
 
         # for now we have commented out the occupancy field initialization until you can successfully fetch the map
         self.occupancy_field = OccupancyField(map)
@@ -167,6 +167,7 @@ class ParticleFilter:
         else:
             self.current_odom_xy_theta = new_odom_xy_theta
             return
+        print "delta: ", delta
         x, y = delta[0], delta[1]
         r = math.sqrt(x**2+y**2)
         theta = np.arctan2(float(y), float(x))
@@ -195,10 +196,14 @@ class ParticleFilter:
         # make sure the distribution is normalized
         self.normalize_particles()
 
-
         # draw_random_sample
+        self.particle_cloud = self.draw_random_sample(
+            self.particle_cloud,
+            [particle.w for particle in self.particle_cloud],
+            self.n_particles
+        )
 
-        # TODO: fill out the rest of the implementation
+        self.normalize_particles()
 
     def update_particles_with_laser(self, msg):
         """ Updates the particle weights in response to the scan contained in the msg """
@@ -257,8 +262,6 @@ class ParticleFilter:
             xy_theta = convert_pose_to_xy_and_theta(self.odom_pose.pose)
         self.particle_cloud = []
 
-        self.particle_cloud.append(Particle(0,0,0))
-
         (x, y, theta) = xy_theta
 
         # Create N particles centered around initial guess
@@ -291,7 +294,7 @@ class ParticleFilter:
                                           frame_id=self.map_frame),
                                   pose=particle.as_pose(),
                                   type=0,
-                                  scale=Vector3(x=particle.w*2,y=particle.w*1,z=particle.w*4),
+                                  scale=Vector3(x=particle.w*2*self.marker_multiplier,y=particle.w*1*self.marker_multiplier,z=particle.w*4*self.marker_multiplier),
                                   id=index,
                                   color=ColorRGBA(r=1,a=1))
             marker_array.append(marker)
@@ -351,6 +354,7 @@ class ParticleFilter:
             self.update_robot_pose()                # update robot's pose
             self.resample_particles()               # resample particles to focus on areas of high density
             self.fix_map_to_odom_transform(msg)     # update map to odom transform now that we have new particles
+            print "sum, length: ", (sum([particle.w for particle in self.particle_cloud]), len(self.particle_cloud))
         # publish particles (so things like rviz can see them)
         self.publish_particles(msg)
 
